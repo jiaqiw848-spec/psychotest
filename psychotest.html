@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCL-90症状自评量表测试（专业版）</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 配置Tailwind自定义样式 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#6366F1',
+                        light: '#F3F4F6',
+                        dark: '#1F2937',
+                        level1: '#10B981',
+                        level2: '#3B82F6',
+                        level3: '#F59E0B',
+                        level4: '#EF4444',
+                        level5: '#991B1B',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .question-card {
+                @apply bg-white rounded-lg shadow-md p-6 mb-4 transition-all hover:shadow-lg;
+            }
+            .option-btn {
+                @apply px-4 py-2 rounded-md border transition-all hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/50;
+            }
+            .option-active {
+                @apply bg-primary text-white border-primary;
+            }
+            .result-card {
+                @apply bg-white rounded-lg shadow-md p-6 mb-4;
+            }
+            .normal {
+                @apply text-green-600 font-medium;
+            }
+            .abnormal {
+                @apply text-red-600 font-medium;
+            }
+            .collapse-card {
+                @apply bg-white rounded-lg shadow-md mb-4 overflow-hidden;
+            }
+            .collapse-header {
+                @apply p-6 cursor-pointer flex justify-between items-center bg-primary/5 hover:bg-primary/10 transition-all;
+            }
+            .collapse-content {
+                @apply p-6 border-t border-gray-100 bg-gray-50;
+            }
+            .factor-tag {
+                @apply text-xs px-2 py-1 rounded bg-primary/10 text-primary inline-block ml-2;
+            }
+            .level-tag {
+                @apply px-3 py-1 rounded-full text-white text-sm font-medium;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-dark">
+    <!-- 头部 -->
+    <header class="bg-primary text-white py-6 px-4">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-2xl md:text-3xl font-bold mb-2"><i class="fas fa-heart-pulse mr-2"></i>SCL-90症状自评量表（专业版）</h1>
+            <p class="opacity-90 text-sm md:text-base">世界著名心理健康测试量表 | 含专业结果分析&分级干预建议 | 评估近期（一周内）心理症状水平</p>
+        </div>
+    </header>
+
+    <!-- 主内容 -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <!-- 测试说明 -->
+        <section id="intro" class="question-card mb-8">
+            <h2 class="text-xl font-bold mb-4 text-primary">测试说明</h2>
+            <ul class="space-y-2 text-base">
+                <li><i class="fas fa-circle text-xs mr-2"></i>本量表共90道题，评估你<strong>最近一周内</strong>的心理状态；</li>
+                <li><i class="fas fa-circle text-xs mr-2"></i>每题有5个选项，根据症状出现的程度选择：<strong>1=没有 2=很轻 3=中等 4=偏重 5=严重</strong>；</li>
+                <li><i class="fas fa-circle text-xs mr-2"></i>请根据自身实际情况如实选择，无对错之分，完成后自动生成<strong>专业分级结果+详细解读</strong>；</li>
+                <li><i class="fas fa-circle text-xs mr-2"></i>本测试结果仅为<strong>初步参考</strong>，不构成专业诊断，如需心理帮助请咨询专业心理医师/精神科医生。</li>
+            </ul>
+            <button id="startTest" class="mt-6 w-full bg-primary text-white py-3 rounded-md font-medium hover:bg-primary/90 transition-all flex items-center justify-center">
+                <i class="fas fa-play mr-2"></i>开始测试
+            </button>
+        </section>
+
+        <!-- 测试题目区域 -->
+        <section id="testArea" class="hidden">
+            <!-- 进度条 -->
+            <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
+                <div id="progressBar" class="bg-primary h-2 rounded-full w-0 transition-all"></div>
+            </div>
+            <p class="text-sm text-gray-600 mb-6" id="progressText">已完成 0/90 题</p>
+
+            <!-- 题目容器 -->
+            <div id="questionContainer" class="mb-8"></div>
+
+            <!-- 操作按钮 -->
+            <div class="flex justify-between mt-8">
+                <button id="prevBtn" class="px-6 py-2 border border-primary text-primary rounded-md hover:bg-primary/10 transition-all hidden">
+                    <i class="fas fa-chevron-left mr-1"></i>上一题
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-all">
+                    下一题<i class="fas fa-chevron-right ml-1"></i>
+                </button>
+                <button id="submitBtn" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all hidden">
+                    <i class="fas fa-check mr-1"></i>提交结果
+                </button>
+            </div>
+        </section>
+
+        <!-- 结果展示区域 -->
+        <section id="resultArea" class="hidden">
+            <h2 class="text-2xl font-bold mb-6 text-primary text-center"><i class="fas fa-chart-pie mr-2"></i>你的SCL-90专业测试结果</h2>
+            <p class="text-center text-gray-600 mb-8">中国成人常模因子分临界值为<span class="text-red-600 font-medium">2分</span>，≥2分提示该维度可能存在心理症状，分数越高症状越明显</p>
+
+            <!-- 核心指标 -->
+            <div class="result-card">
+                <h3 class="text-lg font-bold mb-4 flex items-center"><i class="fas fa-tachometer-alt text-primary mr-2"></i>核心统计指标</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><span class="font-medium">总均分：</span><span id="totalAvg">0</span>（总分/90，反映<strong>整体症状平均严重程度</strong>）</div>
+                    <div><span class="font-medium">阳性项目数：</span><span id="positiveCount">0</span>（评分≥2的题目数，<strong>正常≤43</strong>）</div>
+                    <div><span class="font-medium">阴性项目数：</span><span id="negativeCount">0</span>（评分=1的题目数，反映无不适维度）</div>
+                    <div><span class="font-medium">阳性症状均分：</span><span id="positiveAvg">0</span>（阳性项目总分/阳性项目数，<strong>症状核心严重度</strong>）</div>
+                </div>
+            </div>
+
+            <!-- 整体分级结果 -->
+            <div class="result-card">
+                <h3 class="text-lg font-bold mb-4 flex items-center"><i class="fas fa-flag text-primary mr-2"></i>整体心理状态分级</h3>
+                <div id="levelResult" class="p-4 rounded-lg border text-center text-lg font-medium">
+                    <!-- 动态生成分级结果 -->
+                </div>
+            </div>
+
+            <!-- 9个因子分结果 -->
+            <div>
+                <h3 class="text-lg font-bold mb-4 flex items-center"><i class="fas fa-bar-chart text-primary mr-2"></i>9大因子分详细结果</h3>
+                <div id="factorsResult" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"></div>
+            </div>
+
+            <!-- 分级干预建议 -->
+            <div class="result-card">
+                <h3 class="text-lg font-bold mb-4 flex items-center"><i class="fas fa-lightbulb text-primary mr-2"></i>个性化干预建议</h3>
+                <div id="suggestion" class="space-y-3 text-base">
+                    <!-- 动态生成建议 -->
+                </div>
+            </div>
+
+            <!-- 折叠式专业详细解读 -->
+            <div class="collapse-card">
+                <div class="collapse-header" id="collapseHeader">
+                    <h3 class="text-lg font-bold text-primary"><i class="fas fa-book mr-2"></i>SCL-90专业深度解读（点击展开/收起）</h3>
+                    <i class="fas fa-chevron-down text-primary transition-transform" id="collapseIcon"></i>
+                </div>
+                <div class="collapse-content hidden" id="collapseContent">
+                    <!-- 核心指标解读 -->
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold mb-4 text-dark">一、核心统计指标专业解读</h4>
+                        <table class="w-full border-collapse border border-gray-300 mb-4">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="border border-gray-300 p-2 text-left">指标名称</th>
+                                    <th class="border border-gray-300 p-2 text-left">计分公式</th>
+                                    <th class="border border-gray-300 p-2 text-left">专业解读</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border border-gray-300 p-2">总均分</td>
+                                    <td class="border border-gray-300 p-2">总分÷90</td>
+                                    <td class="border border-gray-300 p-2">✅＜2分：无明显症状；⚠️2~3分：轻中度症状；❌＞3分：中重度至重度症状</td>
+                                </tr>
+                                <tr class="bg-gray-50">
+                                    <td class="border border-gray-300 p-2">阳性项目数</td>
+                                    <td class="border border-gray-300 p-2">评分≥2分的题目数</td>
+                                    <td class="border border-gray-300 p-2">✅≤43项：症状范围小；⚠️44~60项：范围中等；❌＞60项：范围广</td>
+                                </tr>
+                                <tr>
+                                    <td class="border border-gray-300 p-2">阴性项目数</td>
+                                    <td class="border border-gray-300 p-2">评分=1分的题目数</td>
+                                    <td class="border border-gray-300 p-2">与阳性项目数此消彼长，数值越高无不适维度越多</td>
+                                </tr>
+                                <tr class="bg-gray-50">
+                                    <td class="border border-gray-300 p-2">阳性症状均分</td>
+                                    <td class="border border-gray-300 p-2">（总分-阴性项目数）÷阳性项目数</td>
+                                    <td class="border border-gray-300 p-2">比总均分更精准的症状核心严重度指标，＞总均分提示症状集中爆发</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 9因子深度解读 -->
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold mb-4 text-dark">二、9大因子分深度专业解读（中国成人常模）</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- 躯体化 -->
+                            <div class="p-4 border rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">1. 躯体化（12题）<span class="factor-tag">心理引发躯体不适</span></h5>
+                                <p class="text-sm mb-2"><strong>核心</strong>：无器质性病变的身体症状，由心理问题引发</p>
+                                <p class="text-xs text-gray-700">轻(2~2.9)：偶尔头痛/胸闷/肠胃不适；中(3~3.9)：频繁躯体不适，影响生活；重(≥4)：持续严重不适，无法正常生活</p>
+                            </div>
+                            <!-- 强迫症状 -->
+                            <div class="p-4 border rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">2. 强迫症状（10题）<span class="factor-tag">反复思维/行为</span></h5>
+                                <p class="text-sm mb-2"><strong>核心</strong>：明知不必要却无法控制的强迫思维/行为</p>
+                                <p class="text-xs text-gray-700">轻(2~2.9)：偶尔反复检查/洗手；中(3~3.9)：频繁强迫行为，耗费精力；重(≥4)：无法控制，严重影响生活</p>
+                            </div>
+                            <!-- 人际关系敏感 -->
+                            <div class="p-4 border rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">3. 人际关系敏感（9题）<span class="factor-tag">社交自卑/紧张</span></h5>
+                                <p class="text-sm mb-2"><strong>核心</strong>：人际关系中的自卑、多疑、紧张、不自在</p>
+                                <p class="text-xs text-gray-700">轻(2~2.9)：偶尔社交害羞；中(3~3.9)：持续社交紧张，刻意回避；重(≥4)：极度自卑，完全回避社交</p>
+                            </div>
+                            <!-- 抑郁 -->
+                            <div class="p-4 border rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">4. 抑郁（13题）<span class="factor-tag">情绪低落/自我否定</span></h5>
+                                <p class="text-sm mb-2"><strong>核心</strong>：情绪低落、兴趣减退、自我否定、消极悲观（含自杀意念）</p>
+                                <p class="text-xs text-gray-700">轻(2~2.9)：偶尔情绪低落；中(3~3.9)：持续低落，兴趣减退；重(≥4)：极度抑郁，频繁自杀意念</p>
+                            </div>
+                            <!-- 焦虑 -->
+                            <div class="p-4 border rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">5. 焦虑（10题）<span class="factor-tag">无明确对象紧张</span></h5>
+                                <p class="text-sm mb-2"><strong>核心</strong>：无明确对象的紧张、恐惧、心慌、坐立不安（含惊恐发作）</p>
+                                <p class="text-xs text-gray-700">轻(2~2.9)：偶尔心慌紧张；中(3~3.9)：持续焦虑，无法专注；重(≥4)：突发惊恐发作，无法正常生活</p>
+                            </div>
+                            <!-- 敌对 -->
+                            <div class="p-4 border rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">6. 敌对（6题）<span class="factor-tag">愤怒/攻击倾向</span></h5>
+                                <p class="text-sm mb-2"><strong>核心</strong>：对他人的不满、愤怒、攻击倾向（情绪/思维/行为）</p>
+                                <p class="text-xs text-gray-700">轻(2~2.9)：偶尔烦躁不满；中(3~3.9)：频繁愤怒，有攻击冲动；重(≥4)：无法控制情绪，暴力攻击行为</p>
+                            </div>
+                            <!-- 恐怖 -->
+                            <div class="p-4 border rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">7. 恐怖（7题）<span class="factor-tag">特定场景恐惧</span></h5>
+                                <p class="text-sm mb-2"><strong>核心</strong>：对特定场所/场景的非理性恐惧和回避（空旷/人群/交通工具）</p>
+                                <p class="text-xs text-gray-700">轻(2~2.9)：勉强应对恐惧场景；中(3~3.9)：刻意回避，影响出行；重(≥4)：完全无法出门，生活无法自理</p>
+                            </div>
+                            <!-- 偏执 -->
+                            <div class="p-4 border rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">8. 偏执（6题）<span class="factor-tag">多疑/被害妄想</span></h5>
+                                <p class="text-sm mb-2"><strong>核心</strong>：偏执思维、多疑、被害妄想倾向，对他人缺乏信任</p>
+                                <p class="text-xs text-gray-700">轻(2~2.9)：偶尔怀疑他人；中(3~3.9)：持续多疑，人际关系紧张；重(≥4)：严重被害妄想，无法理性沟通</p>
+                            </div>
+                            <!-- 精神病性 -->
+                            <div class="p-4 border rounded-lg md:col-span-2">
+                                <h5 class="font-bold text-lg mb-2">9. 精神病性（10题）<span class="factor-tag">脱离现实/感知障碍</span></h5>
+                                <p class="text-sm mb-2"><strong>核心</strong>：脱离现实的思维/感知障碍（幻听/幻视/思维被控制），精神病性早期表现</p>
+                                <p class="text-xs text-gray-700">轻(2~2.9)：偶尔奇怪想法；中(3~3.9)：思维被控制，轻微感知异常；重(≥4)：明确幻听/幻视，需紧急医疗干预</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 整体分级标准 -->
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold mb-4 text-dark">三、整体状态专业分级标准（临床版）</h4>
+                        <table class="w-full border-collapse border border-gray-300">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="border border-gray-300 p-2 text-left">分级</th>
+                                    <th class="border border-gray-300 p-2 text-left">判定标准</th>
+                                    <th class="border border-gray-300 p-2 text-left">整体状态</th>
+                                    <th class="border border-gray-300 p-2 text-left">干预优先级</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border border-gray-300 p-2 font-bold text-level1">一级（正常）</td>
+                                    <td class="border border-gray-300 p-2 text-sm">所有因子＜2分；阳性项目≤43；总均分＜2</td>
+                                    <td class="border border-gray-300 p-2 text-sm">无明显症状，仅偶尔情绪波动</td>
+                                    <td class="border border-gray-300 p-2 text-sm">低：自我觉察即可</td>
+                                </tr>
+                                <tr class="bg-gray-50">
+                                    <td class="border border-gray-300 p-2 font-bold text-level2">二级（轻度）</td>
+                                    <td class="border border-gray-300 p-2 text-sm">1~3因子2~2.9分；阳性44~60；总均分2~2.9</td>
+                                    <td class="border border-gray-300 p-2 text-sm">少数维度轻度症状，不影响生活</td>
+                                    <td class="border border-gray-300 p-2 text-sm">低：自我调节为主</td>
+                                </tr>
+                                <tr>
+                                    <td class="border border-gray-300 p-2 font-bold text-level3">三级（中度）</td>
+                                    <td class="border border-gray-300 p-2 text-sm">1~3因子3~3.9或4~6因子2~2.9；阳性61~75</td>
+                                    <td class="border border-gray-300 p-2 text-sm">多维度中度症状，部分影响生活</td>
+                                    <td class="border border-gray-300 p-2 text-sm">中：专业心理咨询为主</td>
+                                </tr>
+                                <tr class="bg-gray-50">
+                                    <td class="border border-gray-300 p-2 font-bold text-level4">四级（中重度）</td>
+                                    <td class="border border-gray-300 p-2 text-sm">4~6因子3~3.9或1~3因子≥4；阳性＞75；总均分3~3.9</td>
+                                    <td class="border border-gray-300 p-2 text-sm">多维度中重度症状，严重影响生活</td>
+                                    <td class="border border-gray-300 p-2 text-sm">高：心理咨询+心理治疗</td>
+                                </tr>
+                                <tr>
+                                    <td class="border border-gray-300 p-2 font-bold text-level5">五级（重度）</td>
+                                    <td class="border border-gray-300 p-2 text-sm">≥7因子升高或任意因子≥4伴自杀/精神病性；总均分＞3</td>
+                                    <td class="border border-gray-300 p-2 text-sm">严重心理症状，无法正常生活</td>
+                                    <td class="border border-gray-300 p-2 text-sm">紧急：精神科就诊+药物+治疗</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 通用干预建议 -->
+                    <div>
+                        <h4 class="text-xl font-bold mb-4 text-dark">四、分等级通用干预建议（可落地版）</h4>
+                        <div class="space-y-4">
+                            <div class="p-4 border-l-4 border-level1 rounded-r-lg bg-level1/5">
+                                <h5 class="font-bold mb-2">一级/二级（正常/轻度）：自我调节为主</h5>
+                                <ul class="text-sm space-y-1 list-disc list-inside">
+                                    <li>情绪宣泄：倾诉、写日记，避免情绪压抑</li>
+                                    <li>行为调节：每天30分钟有氧运动（跑步/瑜伽/跳绳）</li>
+                                    <li>认知调整：减少完美主义，避免过度思考/内耗</li>
+                                    <li>生活规律：保证7~8小时睡眠，规律饮食，少喝浓茶/咖啡</li>
+                                    <li>注意力转移：培养兴趣爱好，脱离负面场景</li>
+                                </ul>
+                            </div>
+                            <div class="p-4 border-l-4 border-level3 rounded-r-lg bg-level3/5">
+                                <h5 class="font-bold mb-2">三级（中度）：专业心理咨询+自我调节</h5>
+                                <ul class="text-sm space-y-1 list-disc list-inside">
+                                    <li>寻求<strong>持证心理咨询师</strong>帮助（优先CBT认知行为疗法、正念疗法）</li>
+                                    <li>选择线上/线下平台（简单心理、壹心理）或当地心理卫生中心</li>
+                                    <li>将咨询师的方法融入日常生活，坚持自我调节</li>
+                                </ul>
+                            </div>
+                            <div class="p-4 border-l-4 border-level4 rounded-r-lg bg-level4/5">
+                                <h5 class="font-bold mb-2">四级（中重度）：心理治疗+心理咨询+自我调节</h5>
+                                <ul class="text-sm space-y-1 list-disc list-inside">
+                                    <li>寻求<strong>心理治疗师</strong>帮助（CBT/DBT辩证行为疗法），每周1~2次</li>
+                                    <li>前往综合医院心理科/精神科评估，判断是否需要辅助药物</li>
+                                    <li>加入心理支持小组，减少孤独感，坚持规律生活</li>
+                                </ul>
+                            </div>
+                            <div class="p-4 border-l-4 border-level5 rounded-r-lg bg-level5/5">
+                                <h5 class="font-bold mb-2">五级（重度）：紧急医疗干预（最高优先级）</h5>
+                                <ul class="text-sm space-y-1 list-disc list-inside">
+                                    <li><strong>立即前往精神科专科医院/综合医院精神科就诊</strong>，由医生诊断并开具药物方案</li>
+                                    <li>配合医生进行「药物治疗+心理治疗」结合的方案</li>
+                                    <li>家人严密监护（尤其有自杀意念者），避免独处，必要时住院治疗</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 重新测试按钮 -->
+            <button id="restartTest" class="mt-6 w-full bg-secondary text-white py-3 rounded-md font-medium hover:bg-secondary/90 transition-all flex items-center justify-center">
+                <i class="fas fa-redo mr-2"></i>重新测试
+            </button>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-6 px-4 mt-8">
+        <div class="max-w-4xl mx-auto text-center text-sm opacity-80">
+            <p>SCL-90症状自评量表（专业版） | 本网页仅为心理科普使用，不构成专业医疗诊断</p>
+            <p class="mt-2">专业诊断需由持证心理咨询师/心理治疗师/精神科医生作出 | © 2025 心理科普网页</p>
+        </div>
+    </footer>
+
+    <script>
+        // SCL-90全部90道题目及对应因子（因子索引：0-躯体化,1-强迫,2-人际关系,3-抑郁,4-焦虑,5-敌对,6-恐怖,7-偏执,8-精神病性）
+        const scl90Questions = [
+            { q: '头痛', factors: [0] },
+            { q: '神经过敏，心中不踏实', factors: [4] },
+            { q: '头脑中有不必要的想法或字句盘旋', factors: [1] },
+            { q: '头晕或晕倒', factors: [0] },
+            { q: '对异性的兴趣减退', factors: [3] },
+            { q: '对旁人责备求全', factors: [2] },
+            { q: '感到别人能控制你的思想', factors: [8] },
+            { q: '责怪别人制造麻烦', factors: [5] },
+            { q: '忘记性大', factors: [1] },
+            { q: '担心自己的衣饰整齐及仪态的端正', factors: [1] },
+            { q: '容易烦恼和激动', factors: [5] },
+            { q: '胸痛', factors: [0] },
+            { q: '害怕空旷的场所或街道', factors: [6] },
+            { q: '感到自己的精力下降，活动减慢', factors: [3] },
+            { q: '想结束自己的生命', factors: [3] },
+            { q: '听到旁人听不到的声音', factors: [8] },
+            { q: '发抖', factors: [4] },
+            { q: '感到大多数人都不可信任', factors: [7] },
+            { q: '胃口不好', factors: [0] },
+            { q: '容易哭泣', factors: [3] },
+            { q: '同异性相处时感到害羞不自在', factors: [2] },
+            { q: '感到受骗，中了圈套或有人想抓住你', factors: [7] },
+            { q: '无缘无故地突然感到害怕', factors: [4] },
+            { q: '自己不能控制地大发脾气', factors: [5] },
+            { q: '怕单独出门', factors: [6] },
+            { q: '经常责怪自己', factors: [3] },
+            { q: '腰痛', factors: [0] },
+            { q: '感到难以完成任务', factors: [1] },
+            { q: '感到孤独', factors: [3] },
+            { q: '感到苦闷', factors: [3] },
+            { q: '过分担忧', factors: [4] },
+            { q: '对事物不感兴趣', factors: [3] },
+            { q: '感到害怕', factors: [6] },
+            { q: '你的感情容易受到伤害', factors: [2] },
+            { q: '旁人能知道你的私下想法', factors: [8] },
+            { q: '感到别人不理解你、不同情你', factors: [2] },
+            { q: '感到人们对你不友好，不喜欢你', factors: [2] },
+            { q: '做事必须做得很慢以保证做得正确', factors: [1] },
+            { q: '心跳得很厉害', factors: [0] },
+            { q: '恶心或胃部不舒服', factors: [0] },
+            { q: '感到比不上他人', factors: [2] },
+            { q: '肌肉酸痛', factors: [0] },
+            { q: '感到有人在监视你、谈论你', factors: [7] },
+            { q: '难以入睡', factors: [4] },
+            { q: '做事必须反复检查', factors: [1] },
+            { q: '难以作出决定', factors: [1] },
+            { q: '怕乘电车、公共汽车、地铁或火车', factors: [6] },
+            { q: '呼吸有困难', factors: [0] },
+            { q: '一阵阵发冷或发热', factors: [0] },
+            { q: '因为感到害怕而避开某些东西、场合或活动', factors: [6] },
+            { q: '脑子变空了', factors: [1] },
+            { q: '身体发麻或刺痛', factors: [0] },
+            { q: '喉咙有梗塞感', factors: [0] },
+            { q: '感到前途没有希望', factors: [3] },
+            { q: '不能集中注意力', factors: [1] },
+            { q: '感到身体的某一部分软弱无力', factors: [0] },
+            { q: '感到紧张或容易紧张', factors: [4] },
+            { q: '感到手或脚发重', factors: [0] },
+            { q: '想到死亡的事', factors: [3] },
+            { q: '吃得太多', factors: [0] },
+            { q: '当别人看着你或谈论你时感到不自在', factors: [2] },
+            { q: '有一些不属于你自己的想法', factors: [8] },
+            { q: '有想打人或伤害他人的冲动', factors: [5] },
+            { q: '醒得太早', factors: [4] },
+            { q: '必须反复洗手、点数目或触摸某些东西', factors: [1] },
+            { q: '睡得不稳不深', factors: [4] },
+            { q: '有想摔坏或破坏东西的冲动', factors: [5] },
+            { q: '有一些别人没有的想法或念头', factors: [7] },
+            { q: '感到对别人神经过敏', factors: [2] },
+            { q: '在商店或电影院等人多的地方感到不自在', factors: [6] },
+            { q: '感到任何事情都很困难', factors: [3] },
+            { q: '一阵阵恐惧或惊恐', factors: [4] },
+            { q: '感到在公共场合吃东西很不舒服', factors: [6] },
+            { q: '经常与人争论', factors: [5] },
+            { q: '单独一人时神经很紧张', factors: [6] },
+            { q: '别人对你的成绩没有作出恰当的评价', factors: [2] },
+            { q: '即使和别人在一起也感到孤单', factors: [3] },
+            { q: '感到坐立不安、心神不定', factors: [4] },
+            { q: '感到自己没有什么价值', factors: [3] },
+            { q: '感到熟悉的东西变成陌生或不象是真的', factors: [8] },
+            { q: '大叫或摔东西', factors: [5] },
+            { q: '害怕会在公共场合晕倒', factors: [6] },
+            { q: '感到别人想占你的便宜', factors: [7] },
+            { q: '为一些有关性的想法而很苦恼', factors: [1] },
+            { q: '你认为应该因为自己的过错而受到惩罚', factors: [3] },
+            { q: '感到要很快把事情做完', factors: [1] },
+            { q: '感到自己的身体有严重问题', factors: [0] },
+            { q: '从未感到和其他人很亲近', factors: [2] },
+            { q: '感到自己有罪', factors: [3] },
+            { q: '感到自己的脑子有毛病', factors: [8] }
+        ];
+
+        // 因子名称、常模、核心标签、题目数
+        const factors = [
+            { name: '躯体化', norm: 2, tag: '心理引发躯体不适', count: 12 },
+            { name: '强迫症状', norm: 2, tag: '反复思维/行为', count: 10 },
+            { name: '人际关系敏感', norm: 2, tag: '社交自卑/紧张', count: 9 },
+            { name: '抑郁', norm: 2, tag: '情绪低落/自我否定', count: 13 },
+            { name: '焦虑', norm: 2, tag: '无明确对象紧张', count: 10 },
+            { name: '敌对', norm: 2, tag: '愤怒/攻击倾向', count: 6 },
+            { name: '恐怖', norm: 2, tag: '特定场景恐惧', count: 7 },
+            { name: '偏执', norm: 2, tag: '多疑/被害妄想', count: 6 },
+            { name: '精神病性', norm: 2, tag: '脱离现实/感知障碍', count: 10 }
+        ];
+
+        // 全局变量
+        let currentQ = 0; // 当前题目索引
+        let answers = new Array(90).fill(0); // 存储答案，初始为0
+        let factorScores = new Array(9).fill(0); // 9个因子的原始分
+
+        // 获取DOM元素
+        const intro = document.getElementById('intro');
+        const testArea = document.getElementById('testArea');
+        const resultArea = document.getElementById('resultArea');
+        const startTest = document.getElementById('startTest');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const questionContainer = document.getElementById('questionContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const restartTest = document.getElementById('restartTest');
+        const totalAvg = document.getElementById('totalAvg');
+        const positiveCount = document.getElementById('positiveCount');
+        const negativeCount = document.getElementById('negativeCount');
+        const positiveAvg = document.getElementById('positiveAvg');
+        const factorsResult = document.getElementById('factorsResult');
+        const suggestion = document.getElementById('suggestion');
+        const levelResult = document.getElementById('levelResult');
+        // 折叠面板元素
+        const collapseHeader = document.getElementById('collapseHeader');
+        const collapseContent = document.getElementById('collapseContent');
+        const collapseIcon = document.getElementById('collapseIcon');
+
+        // 折叠面板切换
+        collapseHeader.addEventListener('click', () => {
+            collapseContent.classList.toggle('hidden');
+            collapseIcon.classList.toggle('rotate-180');
+        });
+
+        // 开始测试
+        startTest.addEventListener('click', () => {
+            intro.classList.add('hidden');
+            testArea.classList.remove('hidden');
+            renderQuestion(currentQ);
+            updateProgress();
+        });
+
+        // 重新测试
+        restartTest.addEventListener('click', () => {
+            currentQ = 0;
+            answers = new Array(90).fill(0);
+            factorScores = new Array(9).fill(0);
+            resultArea.classList.add('hidden');
+            intro.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressText.textContent = '已完成 0/90 题';
+            // 重置折叠面板
+            collapseContent.classList.add('hidden');
+            collapseIcon.classList.remove('rotate-180');
+        });
+
+        // 上一题
+        prevBtn.addEventListener('click', () => {
+            if (currentQ > 0) {
+                currentQ--;
+                renderQuestion(currentQ);
+                updateProgress();
+                submitBtn.classList.add('hidden');
+                nextBtn.classList.remove('hidden');
+                if (currentQ === 0) prevBtn.classList.add('hidden');
+            }
+        });
+
+        // 下一题
+        nextBtn.addEventListener('click', () => {
+            if (answers[currentQ] === 0) {
+                alert('请选择该题的选项后再继续！');
+                return;
+            }
+            if (currentQ < 89) {
+                currentQ++;
+                renderQuestion(currentQ);
+                updateProgress();
+                prevBtn.classList.remove('hidden');
+                if (currentQ === 89) {
+                    nextBtn.classList.add('hidden');
+                    submitBtn.classList.remove('hidden');
+                }
+            }
+        });
+
+        // 提交结果
+        submitBtn.addEventListener('click', () => {
+            if (answers[currentQ] === 0) {
+                alert('请选择该题的选项后再提交！');
+                return;
+            }
+            calculateScores();
+            const level = judgeLevel(); // 判定整体分级
+            renderResult(level);
+            testArea.classList.add('hidden');
+            resultArea.classList.remove('hidden');
+            // 滚动到结果顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // 渲染当前题目
+        function renderQuestion(index) {
+            const question = scl90Questions[index];
+            questionContainer.innerHTML = `
+                <div class="question-card">
+                    <h3 class="text-lg font-bold mb-4">第 ${index + 1} 题：${question.q}</h3>
+                    <div class="grid grid-cols-5 gap-2 md:gap-4">
+                        <button class="option-btn ${answers[index] === 1 ? 'option-active' : ''}" data-score="1">1<br>没有</button>
+                        <button class="option-btn ${answers[index] === 2 ? 'option-active' : ''}" data-score="2">2<br>很轻</button>
+                        <button class="option-btn ${answers[index] === 3 ? 'option-active' : ''}" data-score="3">3<br>中等</button>
+                        <button class="option-btn ${answers[index] === 4 ? 'option-active' : ''}" data-score="4">4<br>偏重</button>
+                        <button class="option-btn ${answers[index] === 5 ? 'option-active' : ''}" data-score="5">5<br>严重</button>
+                    </div>
+                </div>
+            `;
+            // 绑定选项点击事件
+            const optionBtns = document.querySelectorAll('.option-btn');
+            optionBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 移除所有激活状态
+                    optionBtns.forEach(b => b.classList.remove('option-active'));
+                    // 添加当前激活状态
+                    btn.classList.add('option-active');
+                    // 保存答案
+                    answers[index] = parseInt(btn.dataset.score);
+                });
+            });
+        }
+
+        // 更新进度条和进度文本
+        function updateProgress() {
+            const progress = ((currentQ + 1) / 90) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `已完成 ${currentQ + 1}/90 题`;
+        }
+
+        // 计算所有分数
+        function calculateScores() {
+            // 重置因子分
+            factorScores.fill(0);
+            // 计算各因子原始分
+            scl90Questions.forEach((q, index) => {
+                const score = answers[index];
+                q.factors.forEach(factorIndex => {
+                    factorScores[factorIndex] += score;
+                });
+            });
+
+            // 计算总均分、阳性项目数等
+            const totalScore = answers.reduce((a, b) => a + b, 0); // 总分
+            window.totalScore = totalScore;
+            window.positiveCountVal = answers.filter(s => s >= 2).length; // 阳性项目数
+            window.negativeCountVal = answers.filter(s => s === 1).length; // 阴性项目数
+            // 阳性症状均分（无阳性项目时为0）
+            window.positiveAvgVal = window.positiveCountVal > 0 
+                ? (totalScore - window.negativeCountVal) / window.positiveCountVal 
+                : 0;
+            window.totalAvgVal = (totalScore / 90).toFixed(2); // 总均分
+            // 计算因子均分（原始分/题目数，保留2位小数）
+            window.factorAvg = factorScores.map((score, index) => (score / factors[index].count).toFixed(2));
+            // 异常因子相关
+            window.abnormalFactors = window.factorAvg.map((s, i) => parseFloat(s) >= factors[i].norm); // 各因子是否异常
+            window.abnormalCount = window.abnormalFactors.filter(Boolean).length; // 异常因子数
+            // 各程度异常因子数
+            window.lightAbnormal = window.factorAvg.filter(s => parseFloat(s) >=2 && parseFloat(s) <3).length;
+            window.midAbnormal = window.factorAvg.filter(s => parseFloat(s) >=3 && parseFloat(s) <4).length;
+            window.heavyAbnormal = window.factorAvg.filter(s => parseFloat(s) >=4).length;
+        }
+
+        // 判定整体分级（返回：等级名称、等级标识、等级颜色、等级描述）
+        function judgeLevel() {
+            const tAvg = parseFloat(window.totalAvgVal);
+            const pCount = window.positiveCountVal;
+            const aCount = window.abnormalCount;
+            const lA = window.lightAbnormal;
+            const mA = window.midAbnormal;
+            const hA = window.heavyAbnormal;
+
+            // 五级（重度）
+            if (aCount >=7 || (hA >=1 && (window.factorAvg[3] >=4 || window.factorAvg[8] >=4)) || tAvg >3) {
+                return {
+                    name: '五级（重度症状）',
+                    tag: 'level5',
+                    color: '#991B1B',
+                    desc: '你存在严重的心理症状，已明显影响正常生活，部分维度可能伴随自杀意念或精神病性症状，需立即进行专业医疗干预！'
+                };
+            }
+            // 四级（中重度）
+            else if ((mA >=4 && aCount <=6) || (hA >=1 && hA <=3) || pCount >75 || tAvg >=3 && tAvg <=3.9) {
+                return {
+                    name: '四级（中重度症状）',
+                    tag: 'level4',
+                    color: '#EF4444',
+                    desc: '你多个维度存在中重度心理症状，已严重影响工作、生活和社交，自我调节完全无效，需专业的心理治疗+心理咨询结合干预！'
+                };
+            }
+            // 三级（中度）
+            else if ((mA >=1 && mA <=3 && aCount <=3) || (lA >=4 && lA <=6) || (pCount >=61 && pCount <=75)) {
+                return {
+                    name: '三级（中度症状）',
+                    tag: 'level3',
+                    color: '#F59E0B',
+                    desc: '你多个维度存在中度心理症状，已部分影响日常生活和社交，自我调节效果有限，需寻求专业心理咨询师的帮助进行干预！'
+                };
+            }
+            // 二级（轻度）
+            else if ((lA >=1 && lA <=3) || (pCount >=44 && pCount <=60) || (tAvg >=2 && tAvg <=2.9)) {
+                return {
+                    name: '二级（轻度症状）',
+                    tag: 'level2',
+                    color: '#3B82F6',
+                    desc: '你少数维度存在轻度心理症状，对日常生活无明显影响，仅偶尔出现情绪波动，通过科学的自我调节即可有效缓解！'
+                };
+            }
+            // 一级（正常）
+            else {
+                return {
+                    name: '一级（心理状态正常）',
+                    tag: 'level1',
+                    color: '#10B981',
+                    desc: '你的心理状态良好，所有维度均无明显心理症状，仅可能存在偶尔的情绪波动，保持现有生活状态并定期自我觉察即可！'
+                };
+            }
+        }
+
+        // 渲染结果
+        function renderResult(level) {
+            // 更新核心指标
+            totalAvg.textContent = window.totalAvgVal;
+            positiveCount.textContent = `${window.positiveCountVal}（正常≤43）`;
+            negativeCount.textContent = window.negativeCountVal;
+            positiveAvg.textContent = window.positiveAvgVal.toFixed(2);
+
+            // 更新整体分级结果
+            levelResult.innerHTML = `
+                <div class="flex flex-col items-center justify-center">
+                    <span class="level-tag ${level.tag} mb-3">${level.name}</span>
+                    <p class="mb-2">${level.desc}</p>
+                    <p class="text-sm text-gray-600">异常因子数：${window.abnormalCount}/9 | 中重度因子数：${window.midAbnormal + window.heavyAbnormal}/9</p>
+                </div>
+            `;
+            levelResult.style.borderColor = level.color;
+            levelResult.style.backgroundColor = `${level.color}10`;
+
+            // 更新9个因子分
+            factorsResult.innerHTML = '';
+            factors.forEach((factor, index) => {
+                const score = parseFloat(window.factorAvg[index]);
+                const isAbnormal = score >= factor.norm;
+                factorsResult.innerHTML += `
+                    <div class="p-4 border rounded-lg ${isAbnormal ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}">
+                        <h4 class="font-bold flex items-center">${factor.name} 
+                            <span class="factor-tag ml-2">${factor.tag}</span>
+                        </h4>
+                        <p class="mt-1">因子分：<span class="${isAbnormal ? 'abnormal' : 'normal'}">${score}</span>（${factor.count}题）</p>
+                        <p class="text-xs text-gray-600 mt-1">临界值：${factor.norm}分 ${isAbnormal ? '→ 可能存在症状' : '→ 状态正常'}</p>
+                        ${isAbnormal ? `<p class="text-xs text-red-500 mt-2">💡 该维度症状程度：${score<3?'轻度':score<4?'中度':'重度'}</p>` : ''}
+                    </div>
+                `;
+            });
+
+            // 生成个性化干预建议
+            let suggestionText = '';
+            // 五级（重度）
+            if (level.tag === 'level5') {
+                suggestionText = `
+                    <p><i class="fas fa-triangle-exclamation text-level5 mr-2"></i><strong>紧急干预建议</strong>：你的测试结果提示存在严重心理症状，可能伴随自杀意念或精神病性症状，<strong>请立即前往精神科专科医院或综合医院的精神科/心理科就诊</strong>，由专业精神科医生进行诊断并制定治疗方案！</p>
+                    <p><i class="fas fa-user-md text-level5 mr-2"></i>治疗建议：优先接受药物治疗（医生指导下），配合专业的心理治疗，家人需全程陪伴监护，避免独处，必要时立即住院治疗，切勿拖延！</p>
+                    <p><i class="fas fa-hand-holding-heart text-level5 mr-2"></i>重要提醒：此时的心理症状已超出心理咨询范畴，<strong>药物治疗是基础</strong>，必须由精神科医生开具处方，切勿自行用药！</p>
+                `;
+            }
+            // 四级（中重度）
+            else if (level.tag === 'level4') {
+                suggestionText = `
+                    <p><i class="fas fa-circle-exclamation text-level4 mr-2"></i><strong>高优先级干预建议</strong>：你多个维度存在中重度心理症状，自我调节已无法缓解，需立即寻求专业的心理治疗+心理咨询结合干预！</p>
+                    <p><i class="fas fa-couch text-level4 mr-2"></i>专业帮助：1. 寻找持有「心理治疗师证」的专业人士，采用CBT认知行为疗法、DBT辩证行为疗法等；2. 前往综合医院心理科评估，由医生判断是否需要辅助药物治疗；3. 加入线下心理支持小组，减少孤独感。</p>
+                    <p><i class="fas fa-house-user text-level4 mr-2"></i>生活建议：保持规律的作息和饮食，避免熬夜和独处，让家人或亲友知晓你的状态，必要时暂时减少工作/学习压力，专注于心理调节！</p>
+                `;
+            }
+            // 三级（中度）
+            else if (level.tag === 'level3') {
+                suggestionText = `
+                    <p><i class="fas fa-exclamation-circle text-level3 mr-2"></i><strong>中优先级干预建议</strong>：你多个维度存在中度心理症状，自我调节效果有限，需优先寻求专业心理咨询师的帮助，结合自我调节进行干预！</p>
+                    <p><i class="fas fa-comments text-level3 mr-2"></i>专业帮助：寻找持有「心理咨询师证」的专业人士（优先CBT认知行为疗法、正念疗法），可选择线上平台（简单心理、壹心理）或当地心理卫生中心、高校心理咨询室（免费/低费），每周1次，持续4~8次。</p>
+                    <p><i class="fas fa-running text-level3 mr-2"></i>自我调节：坚持每天30分钟有氧运动，写情绪日记宣泄负面情绪，减少完美主义和过度思考，避免接触引发负面情绪的场景和人！</p>
+                `;
+            }
+            // 二级（轻度）
+            else if (level.tag === 'level2') {
+                suggestionText = `
+                    <p><i class="fas fa-info-circle text-level2 mr-2"></i><strong>低优先级干预建议</strong>：你少数维度存在轻度心理症状，对生活无明显影响，通过科学的自我调节即可有效缓解，无需专业干预！</p>
+                    <p><i class="fas fa-heart text-level2 mr-2"></i>核心自我调节方法：1. 情绪宣泄：向亲友倾诉、写日记，避免情绪压抑；2. 行为调节：每天30分钟有氧运动（跑步、瑜伽、跳绳），运动是缓解情绪的天然良药；3. 认知调整：减少内耗，接受自己的不完美，避免过度思考；4. 生活规律：保证7~8小时睡眠，规律饮食，减少咖啡/浓茶摄入；5. 注意力转移：培养兴趣爱好，脱离负面情绪场景。</p>
+                    <p><i class="fas fa-users text-level2 mr-2"></i>社交建议：每周与亲友见面或聊天，避免长期独处，维持良好的人际关系，适当参加轻松的社交活动，缓解社交紧张！</p>
+                `;
+            }
+            // 一级（正常）
+            else {
+                suggestionText = `
+                    <p><i class="fas fa-check-circle text-level1 mr-2"></i><strong>日常维护建议</strong>：你的心理状态良好，无明显心理症状，仅可能存在偶尔的情绪波动，继续保持现有生活状态并定期自我觉察即可！</p>
+                    <p><i class="fas fa-smile text-yellow-500 mr-2"></i>心理维护方法：1. 保持规律的生活作息和适度的运动，维持情绪稳定；2. 继续保持良好的人际关系，遇到情绪问题及时向亲友倾诉；3. 培养积极的心态，学会自我接纳和情绪管理；4. 定期进行自我心理觉察，若后续出现情绪持续低落、焦虑等情况，及时进行自我调节或寻求帮助。</p>
+                    <p><i class="fas fa-star text-yellow-500 mr-2"></i>恭喜你！保持当前的生活方式，你的心理状态会持续处于良好水平！</p>
+                `;
+            }
+            // 通用提醒
+            suggestionText += `<p class="mt-4 text-sm text-gray-600 border-t border-gray-200 pt-4"><i class="fas fa-shield-halved mr-1"></i> 重要提醒：本测试结果仅为<strong>心理科普初步参考</strong>，不构成专业的医学/心理诊断，专业诊断需由持证心理咨询师、心理治疗师或精神科医生结合临床访谈、实际情况作出！</p>`;
+            suggestion.innerHTML = suggestionText;
+        }
+    </script>
+</body>
+</html>
